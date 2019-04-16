@@ -27,19 +27,19 @@ def resample(filename, timeframe='15Min'):
 
 if __name__ == "__main__":
 
-    x, y = resample('1 (1).log', '1s')
+    x, y = resample('1 (1).log', '1Min')
     x.to_csv('new.csv')
-    x['RSI'] = talib.RSI(x['open'], timeperiod=36)
-    x['MA14'] = talib.EMA(x['close'], timeperiod=36)
-    x['MA28'] = talib.EMA(x['close'], timeperiod=72)
-    f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
-    ax1.xaxis.set_major_formatter(xfmt)
-
-    ax1.plot(x['close'])
-    print(x['open'].std())
-    print(x['open'].mean())
-    print(x['open'].head())
-
-    ax2.plot(x['RSI'])
-    plt.show()
+    # x['RSI'] = talib.RSI(x['open'], timeperiod=36)
+    # x['MA14'] = talib.EMA(x['close'], timeperiod=36)
+    # x['MA28'] = talib.EMA(x['close'], timeperiod=72)
+    # f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    # xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
+    # ax1.xaxis.set_major_formatter(xfmt)
+    #
+    # ax1.plot(x['close'])
+    # print(x['open'].std())
+    # print(x['open'].mean())
+    # print(x['open'].head())
+    #
+    # ax2.plot(x['RSI'])
+    # plt.show()

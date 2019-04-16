@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def make_long(longs, dataframe, row,lots=10,overlap=False):
+def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=300):
     # longs is a set of all longs
     # dataframe is a pandas dataframe of asks, used to market exit positions
     # row has our timestamp, entry price at row[0] and row[1] respectively
@@ -16,13 +16,15 @@ def make_long(longs, dataframe, row,lots=10,overlap=False):
             try:
                 if timestamp_of_entry < trade["timestamp_of_exit"]:
                     return {"timestamp_of_entry": timestamp_of_entry, "type_of_exit": "Overlap"}
+                else:
+                    break
             except:
-                print("No trades have happened yet, skipping\n")
+                pass
 
     # This part of the code will be unreachable if there is a trade overlap
     entry_price = row[1]['close']
-    target_price = entry_price + 900  # 9 rupees up for crude
-    stop_price = entry_price - 300  # 3 rupees down for crude
+    target_price = entry_price + target  # 9 rupees up for crude
+    stop_price = entry_price - stop  # 3 rupees down for crude
     timestamp_of_exit = None
     type_of_exit = None
     pnl = None
@@ -33,12 +35,12 @@ def make_long(longs, dataframe, row,lots=10,overlap=False):
             current_price = item[1]['open']
             if current_price >= target_price:  # If target is hit
                 type_of_exit = "Win"
-                pnl = (current_price - entry_price)/100*lots - 76
+                pnl = (current_price - entry_price) * lots
                 timestamp_of_exit = item[0]
                 break
             elif current_price <= stop_price:  # If stop is hit
                 type_of_exit = "Loss"
-                pnl = (current_price - entry_price)/100*lots - 76
+                pnl = (current_price - entry_price) * lots
                 timestamp_of_exit = item[0]
                 break
 
@@ -51,9 +53,9 @@ def make_long(longs, dataframe, row,lots=10,overlap=False):
             "pnl": pnl}
 
 
-def make_short(shorts, dataframe, row,lots=10,overlap=False):
-    # longs is a set of all longs
-    # dataframe is a pandas dataframe of asks, used to market exit positions
+def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=300):
+    # shorts is a set of all shorts
+    # dataframe is a pandas dataframe of bids, used to market exit positions
     # row has our timestamp, entry price at row[0] and row[1] respectively
 
     # we need to iterate through the dataframe such that when target or stop == open we must close trade
@@ -66,13 +68,15 @@ def make_short(shorts, dataframe, row,lots=10,overlap=False):
             try:
                 if timestamp_of_entry < trade["timestamp_of_exit"]:
                     return {"timestamp_of_entry": timestamp_of_entry, "type_of_exit": "Overlap"}
+                else:
+                    break
             except:
-                print("No trades have happened yet, skipping\n")
+                pass
 
     # This part of the code will be unreachable if there is a trade overlap
     entry_price = row[1]['close']
-    target_price = entry_price + 900  # 9 rupees up for crude
-    stop_price = entry_price - 300  # 3 rupees down for crude
+    target_price = entry_price - target  # 9 rupees down for crude
+    stop_price = entry_price + stop  # 3 rupees up for crude
     timestamp_of_exit = None
     type_of_exit = None
     pnl = None
@@ -81,14 +85,14 @@ def make_short(shorts, dataframe, row,lots=10,overlap=False):
     for item in dataframe.iterrows():
         if item[0] > timestamp_of_entry:
             current_price = item[1]['open']
-            if current_price >= target_price:  # If target is hit
+            if current_price <= target_price:  # If target is hit
                 type_of_exit = "Win"
-                pnl = (current_price - entry_price)/100*lots - 76
+                pnl = (current_price - entry_price) * lots * (-1)
                 timestamp_of_exit = item[0]
                 break
-            elif current_price <= stop_price:  # If stop is hit
+            elif current_price >= stop_price:  # If stop is hit
                 type_of_exit = "Loss"
-                pnl = (current_price - entry_price)/100*lots - 76
+                pnl = (current_price - entry_price) * lots * (-1)
                 timestamp_of_exit = item[0]
                 break
 
