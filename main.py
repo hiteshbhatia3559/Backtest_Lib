@@ -3,6 +3,7 @@ import talib
 import matplotlib.pyplot as plt
 from resample import resample
 from trade import make_long, make_short
+import csv
 
 bid, ask = resample('1 (1).log', '1Min')
 
@@ -10,6 +11,8 @@ rsi_windows = range(5, 50)
 rsi_oversold_bounds = range(10, 50)
 rsi_overbought_bounds = range(50, 90)
 ema_values = range(10, 100)
+targets = range(100,2000,step=100)
+stops = range(100,2000,step=100)
 
 ask['RSI'] = talib.RSI(ask['close'], timeperiod=28)
 ask['MA14'] = talib.EMA(ask['close'], timeperiod=14)
@@ -23,13 +26,14 @@ overlap = False
 # if valid : {timestamp of entry, timestamp of exit, entry price, target price, stop price, type of exit, pnl}
 # if invalid : {timestamp_of_entry, type_of_exit}
 # print(row[1]['RSI']) # RSI VALUES HERE, row[0] is index (timestamp)
+
 for row in ask.iterrows():
     if row[1]['MA14'] > row[1]['MA28']:
         if row[1]['RSI'] < 50:  # Oversold condition
-            longs.append(make_long(longs, bid, row, lots=10, target=200, stop=200,overlap=overlap))
+            longs.append(make_long(longs, bid, row, lots=10, target=1000, stop=200, overlap=overlap))
     if row[1]['MA14'] < row[1]['MA28']:
         if row[1]['RSI'] > 50:
-            shorts.append(make_short(shorts, ask, row, lots=10, target=200, stop=200,overlap=overlap))
+            shorts.append(make_short(shorts, ask, row, lots=10, target=1000, stop=200, overlap=overlap))
 # STRATEGY
 
 # PNL Calc
@@ -68,4 +72,19 @@ for item in shorts:
     if item["type_of_exit"] in ["Win", "Loss"]:
         num_shorts += 1
 
-print("Longs to Shorts ratio : "+str(num_longs)+":"+str(num_shorts)+" -- For a total of "+str(num_longs+num_shorts))
+print("Longs to Shorts ratio : " + str(num_longs) + ":" + str(num_shorts) + " -- For a total of " + str(
+    num_longs + num_shorts))
+
+with open('output.csv', 'w+') as output:
+    writer = csv.writer(output)  # writer.writerow to write rows
+    new = list(longs[0].keys())
+    writer.writerow(new)
+    for each in longs:
+        if each["type_of_exit"] in ["Win", "Loss"]:
+            # print(each)
+            writer.writerow(list(each.values()))
+    for each in shorts:
+        if each["type_of_exit"] in ["Win", "Loss"]:
+            # print(each)
+            writer.writerow(list(each.values()))
+    print("Sent to csv")
