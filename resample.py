@@ -15,6 +15,7 @@ def resample(filename, timeframe='15Min'):
             df.drop(["Remove.{}".format(str(x))], axis=1, inplace=True)
         except:
             pass
+
     df['Timestamp'] = pd.to_datetime(df['Timestamp']*1e9).values + pd.to_timedelta(5.5, unit='h')
     #print(df['Timestamp'])
     df.set_index(["Timestamp"], inplace=True)
@@ -26,7 +27,7 @@ def resample(filename, timeframe='15Min'):
 
 if __name__ == "__main__":
 
-    x, y = resample('1 (1).log', '1Min')
+    x, y = resample('1 (1).log', '1s')
     x.to_csv('new.csv')
     x['RSI'] = talib.RSI(x['open'], timeperiod=36)
     x['MA14'] = talib.EMA(x['close'], timeperiod=36)
@@ -40,8 +41,5 @@ if __name__ == "__main__":
     print(x['open'].mean())
     print(x['open'].head())
 
-    # ax1.plot(y['close'])
-    # ax1.plot(x['MA14'])
-    # ax1.plot(x['MA28'])
     ax2.plot(x['RSI'])
     plt.show()
