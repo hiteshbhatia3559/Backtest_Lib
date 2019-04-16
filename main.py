@@ -5,7 +5,9 @@ from resample import resample
 from trade import make_long, make_short
 import csv
 import os
-
+from statistics import mean
+import numpy as np
+import datetime
 bid, ask = resample('1 (1).log', '5Min')
 
 rsi_windows = range(14, 15)  # 45
@@ -25,7 +27,6 @@ for overlap in overlaps:
                     for fast_ema in ema_values:
                         for target in targets:
                             for stop in stops:
-
                                 settings = "overlap_{}-rsiwindow_{}-rsiupper_{}-rsilower_{}-slowema_{}-fastema_{}-target_{}-stop_{}".format(
                                     overlap, rsi_window, rsi_upper, rsi_lower, slow_ema, fast_ema, target, stop)
                                 # print(settings)
@@ -51,7 +52,7 @@ for overlap in overlaps:
                                     if row[1]['MA_fast'] < row[1]['MA_slow']:
                                         if row[1]['RSI'] > rsi_upper:  # Overbought condition
                                             shorts.append(
-                                                make_short(shorts, ask, row, lots=lots, target=stop, stop=stop,
+                                                make_short(shorts, ask, row, lots=lots, target=target, stop=stop,
                                                            overlap=overlap))
                                 num_longs, num_shorts = 0, 0
                                 for item in longs:
@@ -117,6 +118,23 @@ for overlap in overlaps:
                                 profitability_shorts = short_win / num_shorts
                                 profitability_total = (long_win + short_win) / (num_longs + num_shorts)
 
+                                pnl = []
+
+                                for item in longs:
+                                    pnl.append(item["pnl"])
+                                for item in shorts:
+                                    pnl.append(item["pnl"])
+
+                                total_time_for_every_trade = []
+                                for item in longs:
+                                    total_time_for_every_trade.append(item["timestamp_of_exit"]-item["timestamp_of_entry"])
+                                for item in shorts:
+                                    total_time_for_every_trade.append(item["timestamp_of_exit"]-item["timestamp_of_entry"])
+
+                                avg_time = sum(total_time_for_every_trade, datetime.timedelta(0)) / len(total_time_for_every_trade)
+
+
+
                                 # Logic to return data as a result
                                 if net_long_pnl != 0.0:
                                     if net_short_pnl != 0.0:
@@ -127,7 +145,12 @@ for overlap in overlaps:
                                                         "profitability_longs": profitability_longs,
                                                         "profitability_shorts": profitability_shorts,
                                                         "profitability_total": profitability_total,
-                                                        "number_of_trades":num_shorts+num_longs
+                                                        "number_of_trades":num_shorts+num_longs,
+                                                        "max_profit":max(pnl),
+                                                        "max_DD":min(pnl),
+                                                        "average_pnl":mean(pnl),
+                                                        "apnl/max_DD":mean(pnl)/abs(min(pnl)),
+                                                        "average_trade_time":avg_time
 
                                                         })
                                 i += 1
