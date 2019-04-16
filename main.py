@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from resample import resample
 from trade import make_long,make_short
 
-bid, ask = resample('new.csv','60s')
+bid, ask = resample('new.csv','1s')
 
 ask['RSI'] = talib.RSI(ask['close'],timeperiod=28)
 ask['MA14'] = talib.EMA(ask['close'],timeperiod=14)
