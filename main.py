@@ -6,13 +6,13 @@ from trade import make_long, make_short
 import csv
 import os
 
-bid, ask = resample('1 (1).log', '1Min')
+bid, ask = resample('1 (1).log', '15Min')
 
 rsi_windows = range(14, 15)  # 45
 rsi_oversold_bounds = range(30, 31)  # 40
 rsi_overbought_bounds = range(70, 71)  # 40
 ema_values = [14,28]# range(14, 100)  # 90
-targets = [200,300,400,500]# range(100, 2000, 100)  # 19
+targets = range(100, 2000, 100)  # 19
 stops = [200,300]  # 19
 overlaps = [True, False]  # 2
 i = 0
@@ -130,9 +130,9 @@ for overlap in overlaps:
 
                                                         })
                                 i += 1
-                                print(str(i) + " : " + str(profitability_total)+" : "+str(net_short_pnl + net_long_pnl))
+                                print(str(i) + " : " + str(profitability_total)+" : "+str(net_short_pnl + net_long_pnl)+" : "+str(num_longs+num_shorts)+" : "+settings)
 
-with open("Results.csv","wb+", newline="") as outfile:
+with open("Results.csv","w+", newline="") as outfile:
     writer = csv.writer(outfile)
     writer.writerows(list(results[0].keys()))
     for result in results:
