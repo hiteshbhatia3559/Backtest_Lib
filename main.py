@@ -4,17 +4,18 @@ import matplotlib.pyplot as plt
 from resample import resample
 from trade import make_long, make_short
 import csv
+import os
 
 bid, ask = resample('1 (1).log', '1Min')
 
-rsi_windows = range(5, 50)
-rsi_oversold_bounds = range(10, 50)
-rsi_overbought_bounds = range(50, 90)
-ema_values = range(10, 100)
-targets = range(100,2000,100)
-stops = range(100,2000,100)
-overlaps = [True,False]
-
+rsi_windows = range(5, 50)  # 45
+rsi_oversold_bounds = range(10, 50)  # 40
+rsi_overbought_bounds = range(50, 90)  # 40
+ema_values = range(10, 100)  # 90
+targets = range(100, 2000, 100)  # 19
+stops = range(100, 2000, 100)  # 19
+overlaps = [True, False]  # 2
+i = 0
 results = []
 for overlap in overlaps:
     for rsi_window in rsi_windows:
@@ -25,7 +26,10 @@ for overlap in overlaps:
                         for target in targets:
                             for stop in stops:
                                 try:
-                                    settings = "overlap_{}-rsiwindow_{}-rsiupper_{}-rsilower_{}-slowema_{}-fastema_{}-target_{}-stop_{}".format(overlap,rsi_window,rsi_upper,rsi_lower,slow_ema,fast_ema,target,stop)
+
+                                    settings = "overlap_{}-rsiwindow_{}-rsiupper_{}-rsilower_{}-slowema_{}-fastema_{}-target_{}-stop_{}".format(
+                                        overlap, rsi_window, rsi_upper, rsi_lower, slow_ema, fast_ema, target, stop)
+                                    # print(settings)
                                     ask['RSI'] = talib.RSI(ask['close'], timeperiod=rsi_window)
                                     ask['MA_fast'] = talib.EMA(ask['close'], timeperiod=fast_ema)
                                     ask['MA_slow'] = talib.EMA(ask['close'], timeperiod=slow_ema)
@@ -42,10 +46,14 @@ for overlap in overlaps:
                                     for row in ask.iterrows():
                                         if row[1]['MA_fast'] > row[1]['MA_slow']:
                                             if row[1]['RSI'] < rsi_lower:  # Oversold condition
-                                                longs.append(make_long(longs, bid, row, lots=10, target=target, stop=stop, overlap=overlap))
+                                                longs.append(
+                                                    make_long(longs, bid, row, lots=10, target=target, stop=stop,
+                                                              overlap=overlap))
                                         if row[1]['MA_fast'] < row[1]['MA_slow']:
-                                            if row[1]['RSI'] > rsi_upper: # Overbought condition
-                                                shorts.append(make_short(shorts, ask, row, lots=10, target=stop, stop=stop, overlap=overlap))
+                                            if row[1]['RSI'] > rsi_upper:  # Overbought condition
+                                                shorts.append(
+                                                    make_short(shorts, ask, row, lots=10, target=stop, stop=stop,
+                                                               overlap=overlap))
                                     # STRATEGY
 
                                     # PNL Calc
@@ -89,7 +97,7 @@ for overlap in overlaps:
                                     profitability_shorts = 0
                                     profitability_total = 0
 
-                                    long_win,long_loss,short_win,short_loss = 0,0,0,0
+                                    long_win, long_loss, short_win, short_loss = 0, 0, 0, 0
                                     for item in longs:
                                         if item["type_of_exit"] == "Win":
                                             long_win += 1
@@ -102,22 +110,30 @@ for overlap in overlaps:
                                         if item["type_of_exit"] == "Win":
                                             short_loss += 1
 
-                                    profitability_longs = long_win/num_longs
-                                    profitability_shorts = short_win/num_shorts
-                                    profitability_total = (long_win+short_win)/(num_longs+num_shorts)
+                                    profitability_longs = long_win / num_longs
+                                    profitability_shorts = short_win / num_shorts
+                                    profitability_total = (long_win + short_win) / (num_longs + num_shorts)
 
                                     # Logic to return data as a result
                                     if net_long_pnl != 0.0:
                                         if net_short_pnl != 0.0:
-                                            results.append({"settings":settings,"performance":
-                                                {"netlongpnl":net_long_pnl,"netshortpnl":net_short_pnl,
-                                                 "netpnl":net_short_pnl+net_long_pnl,
-                                                 "profitability_longs":profitability_longs,
-                                                 "profitability_shorts":profitability_shorts,
-                                                 "profitability_total":profitability_total,
+                                            results.append({"settings": settings,
+                                                            "netlongpnl": net_long_pnl,
+                                                            "netshortpnl": net_short_pnl,
+                                                            "netpnl": net_short_pnl + net_long_pnl,
+                                                            "profitability_longs": profitability_longs,
+                                                            "profitability_shorts": profitability_shorts,
+                                                            "profitability_total": profitability_total,
 
-                                                 }})
+                                                            })
+                                    i += 1
+                                    os.system('cls')
+                                    print(str(i) + " : " + profitability_total)
                                 except:
                                     pass
 
-print(len(results))
+with open("Results.csv", newline="") as outfile:
+    writer = csv.writer(outfile)
+    writer.writerows(list(results[0].keys()))
+    for result in results:
+        writer.writerows(list(result.values()))
