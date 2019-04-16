@@ -6,15 +6,15 @@ from trade import make_long, make_short
 import csv
 import os
 
-bid, ask = resample('1 (1).log', '15Min')
+bid, ask = resample('1 (1).log', '5Min')
 
 rsi_windows = range(14, 15)  # 45
-rsi_oversold_bounds = range(30, 31)  # 40
-rsi_overbought_bounds = range(70, 71)  # 40
-ema_values = [14,28]# range(14, 100)  # 90
-targets = range(100, 2000, 100)  # 19
+rsi_oversold_bounds = range(28, 31)  # 40
+rsi_overbought_bounds = range(68, 75)  # 40
+ema_values = [14,28]
+targets = [200,300,400,500,600,700,800]
 stops = [200,300]  # 19
-overlaps = [True, False]  # 2
+overlaps = [False]  # 2
 i = 0
 results = []
 for overlap in overlaps:
@@ -32,7 +32,7 @@ for overlap in overlaps:
                                 ask['RSI'] = talib.RSI(ask['close'], timeperiod=rsi_window)
                                 ask['MA_fast'] = talib.EMA(ask['close'], timeperiod=fast_ema)
                                 ask['MA_slow'] = talib.EMA(ask['close'], timeperiod=slow_ema)
-
+                                lots = 10
                                 longs = []
                                 shorts = []
 
@@ -46,12 +46,12 @@ for overlap in overlaps:
                                     if row[1]['MA_fast'] > row[1]['MA_slow']:
                                         if row[1]['RSI'] < rsi_lower:  # Oversold condition
                                             longs.append(
-                                                make_long(longs, bid, row, lots=10, target=target, stop=stop,
+                                                make_long(longs, bid, row, lots=lots, target=target, stop=stop,
                                                           overlap=overlap))
                                     if row[1]['MA_fast'] < row[1]['MA_slow']:
                                         if row[1]['RSI'] > rsi_upper:  # Overbought condition
                                             shorts.append(
-                                                make_short(shorts, ask, row, lots=10, target=stop, stop=stop,
+                                                make_short(shorts, ask, row, lots=lots, target=stop, stop=stop,
                                                            overlap=overlap))
                                 num_longs, num_shorts = 0, 0
                                 for item in longs:
@@ -75,7 +75,7 @@ for overlap in overlaps:
                                 for item in longs:
                                     try:
                                         longs_pnl += item["pnl"]
-                                        long_turnover += item["entry_price"] * 10
+                                        long_turnover += item["entry_price"] * lots
                                     except:
                                         pass
                                 long_brokerage = long_turnover / 1000000000 * 838
@@ -88,7 +88,7 @@ for overlap in overlaps:
                                 for item in shorts:
                                     try:
                                         shorts_pnl += item['pnl']
-                                        short_turnover += item["entry_price"] * 10
+                                        short_turnover += item["entry_price"] * lots
                                     except:
                                         pass
 
@@ -127,13 +127,22 @@ for overlap in overlaps:
                                                         "profitability_longs": profitability_longs,
                                                         "profitability_shorts": profitability_shorts,
                                                         "profitability_total": profitability_total,
+                                                        "number_of_trades":num_shorts+num_longs
 
                                                         })
                                 i += 1
                                 print(str(i) + " : " + str(profitability_total)+" : "+str(net_short_pnl + net_long_pnl)+" : "+str(num_longs+num_shorts)+" : "+settings)
 
 with open("Results.csv","w+", newline="") as outfile:
-    writer = csv.writer(outfile)
-    writer.writerows(list(results[0].keys()))
+    for header in list(results[0].keys()):
+        if header != list(results[0].keys())[-1]:
+            outfile.write(str(header)+",")
+        else:
+            outfile.write(str(header)+"\n")
     for result in results:
-        writer.writerows(list(result.values()))
+        for value in list(result.values()):
+            if value != list(result.values())[-1]:
+                outfile.write(str(value) + ",")
+            else:
+                outfile.write(str(value) + "\n")
+
