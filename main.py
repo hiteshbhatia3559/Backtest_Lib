@@ -75,7 +75,7 @@ for overlap in overlaps:
 
                                     short_brokerage = short_turnover / 1000000000 * 838
                                     net_short_pnl = shorts_pnl - short_brokerage
-                                    print("Net PNL long is: " + str(net_long_pnl) + " and Net PNL short is: " + str(net_short_pnl))
+                                    # print("Net PNL long is: " + str(net_long_pnl) + " and Net PNL short is: " + str(net_short_pnl))
 
                                     num_longs, num_shorts = 0, 0
                                     for item in longs:
@@ -85,11 +85,39 @@ for overlap in overlaps:
                                         if item["type_of_exit"] in ["Win", "Loss"]:
                                             num_shorts += 1
 
-                                    # print("Longs to Shorts ratio : " + str(num_longs) + ":" + str(num_shorts) + " -- For a total of " + str(
-                                        num_longs + num_shorts
+                                    profitability_longs = 0
+                                    profitability_shorts = 0
+                                    profitability_total = 0
 
+                                    long_win,long_loss,short_win,short_loss = 0,0,0,0
+                                    for item in longs:
+                                        if item["type_of_exit"] == "Win":
+                                            long_win += 1
+                                        if item["type_of_exit"] == "Win":
+                                            long_loss += 1
+
+                                    for item in shorts:
+                                        if item["type_of_exit"] == "Win":
+                                            short_win += 1
+                                        if item["type_of_exit"] == "Win":
+                                            short_loss += 1
+
+                                    profitability_longs = long_win/num_longs
+                                    profitability_shorts = short_win/num_shorts
+                                    profitability_total = (long_win+short_win)/(num_longs+num_shorts)
+
+                                    # Logic to return data as a result
                                     if net_long_pnl != 0.0:
                                         if net_short_pnl != 0.0:
-                                            results.append({"settings":settings,"performance":{"netlongpnl":net_long_pnl},"netshortpnl":net_short_pnl})
+                                            results.append({"settings":settings,"performance":
+                                                {"netlongpnl":net_long_pnl,"netshortpnl":net_short_pnl,
+                                                 "netpnl":net_short_pnl+net_long_pnl,
+                                                 "profitability_longs":profitability_longs,
+                                                 "profitability_shorts":profitability_shorts,
+                                                 "profitability_total":profitability_total,
+
+                                                 }})
                                 except:
                                     pass
+
+print(len(results))
