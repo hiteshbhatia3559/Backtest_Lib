@@ -66,7 +66,7 @@ def get_list_of_files(relative_path,extension):
 def write_trades(settings,trades):
     nocare = os.system("mkdir results")
     keys = trades[0].keys()
-    with open('./results/{}.csv'.format(settings),'wb') as outfile:
+    with open('./results/{}.csv'.format(settings),'w+') as outfile:
         dict_writer = csv.DictWriter(outfile,keys)
         dict_writer.writeheader()
         dict_writer.writerows(trades)

@@ -22,7 +22,7 @@ def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=30
     if overlap is not True:
         if len(longs) != 0:
             for trade in longs:
-                if "timestamp_of_exit" in list(trade.keys()):
+                if "timestamp_of_exit" in list(trade.keys()) and trade["timestamp_of_exit"] is not None:
                     if timestamp_of_entry < trade["timestamp_of_exit"]:
                         return {"timestamp_of_entry": timestamp_of_entry,
                                 "timestamp_of_exit": None,
@@ -61,7 +61,7 @@ def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=30
             "target_price": target_price,
             "stop_price": stop_price,
             "type_of_exit": type_of_exit,
-            "pnl": 0}
+            "pnl": 0.00}
 
 
 def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=300):
@@ -78,14 +78,14 @@ def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=
         if len(shorts) != 0:
             for trade in shorts:
                 if "timestamp_of_exit" in list(trade.keys()):
-                    if timestamp_of_entry < trade["timestamp_of_exit"]:
+                    if "timestamp_of_exit" in list(trade.keys()) and trade["timestamp_of_exit"] is not None:
                         return {"timestamp_of_entry": timestamp_of_entry,
                                 "timestamp_of_exit": None,
                                 "entry_price": None,
                                 "target_price": None,
                                 "stop_price": None,
                                 "type_of_exit": "Overlap",
-                                "pnl": 0}
+                                "pnl": 0.00}
 
     # This part of the code will be unreachable if there is a trade overlap
     entry_price = row[1]['close']
@@ -135,141 +135,157 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                 for stop in stops:
                                     if stop > target:
                                         break
-                                    try:
-                                        settings = "overlap_{}-rsiwindow_{}-rsiupper_{}-rsilower_{}-slowema_{}-fastema_{}-target_{}-stop_{}".format(
-                                            overlap, rsi_window, rsi_upper, rsi_lower, slow_ema, fast_ema, target, stop)
-                                        # print(settings)
-                                        ask['RSI'] = talib.RSI(ask['close'], timeperiod=rsi_window)
-                                        ask['MA_fast'] = talib.EMA(ask['close'], timeperiod=fast_ema)
-                                        ask['MA_slow'] = talib.EMA(ask['close'], timeperiod=slow_ema)
-                                        lots = 10
-                                        longs = []
-                                        shorts = []
 
-                                        # STRATEGY
-                                        # Return type is a dict with
-                                        # if valid : {timestamp of entry, timestamp of exit, entry price, target price, stop price, type of exit, pnl}
-                                        # if invalid : {timestamp_of_entry, type_of_exit}
-                                        # print(row[1]['RSI']) # RSI VALUES HERE, row[0] is index (timestamp)
+                                    settings = "overlap_{}-rsiwindow_{}-rsiupper_{}-rsilower_{}-slowema_{}-fastema_{}-target_{}-stop_{}".format(
+                                        overlap, rsi_window, rsi_upper, rsi_lower, slow_ema, fast_ema, target, stop)
+                                    # print(settings)
+                                    ask['RSI'] = talib.RSI(ask['close'], timeperiod=rsi_window)
+                                    ask['MA_fast'] = talib.EMA(ask['close'], timeperiod=fast_ema)
+                                    ask['MA_slow'] = talib.EMA(ask['close'], timeperiod=slow_ema)
+                                    lots = 10
+                                    longs = []
+                                    shorts = []
 
-                                        for row in ask.iterrows():
-                                            if row[1]['MA_fast'] > row[1]['MA_slow']:
-                                                if row[1]['RSI'] < rsi_lower:  # Oversold condition
-                                                    longs.append(
-                                                        make_long(longs, bid, row, lots=lots, target=target, stop=stop,
-                                                                  overlap=overlap))
-                                            if row[1]['MA_fast'] < row[1]['MA_slow']:
-                                                if row[1]['RSI'] > rsi_upper:  # Overbought condition
-                                                    shorts.append(
-                                                        make_short(shorts, ask, row, lots=lots, target=target,
-                                                                   stop=stop,
-                                                                   overlap=overlap))
-                                        num_longs, num_shorts = 0, 0
-                                        for item in longs:
-                                            if item["type_of_exit"] in ["Win", "Loss"]:
-                                                num_longs += 1
-                                        for item in shorts:
-                                            if item["type_of_exit"] in ["Win", "Loss"]:
-                                                num_shorts += 1
+                                    # STRATEGY
+                                    # Return type is a dict with
+                                    # if valid : {timestamp of entry, timestamp of exit, entry price, target price, stop price, type of exit, pnl}
+                                    # if invalid : {timestamp_of_entry, type_of_exit}
+                                    # print(row[1]['RSI']) # RSI VALUES HERE, row[0] is index (timestamp)
 
-                                        if num_shorts == 0:
-                                            break
-                                        if num_longs == 0:
-                                            break
-                                        # STRATEGY
+                                    for row in ask.iterrows():
+                                        if row[1]['MA_fast'] > row[1]['MA_slow']:
+                                            if row[1]['RSI'] < rsi_lower:  # Oversold condition
+                                                longs.append(
+                                                    make_long(longs, bid, row, lots=lots, target=target, stop=stop,
+                                                              overlap=overlap))
+                                        if row[1]['MA_fast'] < row[1]['MA_slow']:
+                                            if row[1]['RSI'] > rsi_upper:  # Overbought condition
+                                                shorts.append(
+                                                    make_short(shorts, ask, row, lots=lots, target=target,
+                                                               stop=stop,
+                                                               overlap=overlap))
+                                    if len(longs) == 0 or len(shorts) == 0:
+                                        break
+                                    num_longs, num_shorts = 0, 0
+                                    for item in longs:
+                                        if item["type_of_exit"] in ["Win", "Loss"]:
+                                            num_longs += 1
+                                    for item in shorts:
+                                        if item["type_of_exit"] in ["Win", "Loss"]:
+                                            num_shorts += 1
 
-                                        # PNL Calc
-                                        # PNL for longs
+                                    if num_shorts == 0:
+                                        break
+                                    if num_longs == 0:
+                                        break
+                                    # STRATEGY
 
-                                        longs_pnl = 0
-                                        long_turnover = 0
-                                        for item in longs:
-                                            try:
-                                                longs_pnl += item["pnl"]
-                                                long_turnover += item["entry_price"] * lots
-                                            except:
-                                                pass
-                                        long_brokerage = long_turnover / 1000000000 * 838
-                                        net_long_pnl = longs_pnl - long_brokerage
+                                    # PNL Calc
+                                    # PNL for longs
 
-                                        # PNL for shorts
-                                        shorts_pnl = 0
-                                        short_turnover = 0
+                                    longs_pnl = 0
+                                    long_turnover = 0
+                                    for item in longs:
+                                        try:
+                                            longs_pnl += item["pnl"]
+                                            long_turnover += item["entry_price"] * lots
+                                        except:
+                                            pass
+                                    long_brokerage = long_turnover / 1000000000 * 838
+                                    net_long_pnl = longs_pnl - long_brokerage
 
-                                        for item in shorts:
-                                            try:
-                                                shorts_pnl += item['pnl']
-                                                short_turnover += item["entry_price"] * lots
-                                            except:
-                                                pass
+                                    # PNL for shorts
+                                    shorts_pnl = 0
+                                    short_turnover = 0
 
-                                        short_brokerage = short_turnover / 1000000000 * 838
-                                        net_short_pnl = shorts_pnl - short_brokerage
-                                        # print("Net PNL long is: " + str(net_long_pnl) + " and Net PNL short is: " + str(net_short_pnl))
+                                    for item in shorts:
+                                        try:
+                                            shorts_pnl += item['pnl']
+                                            short_turnover += item["entry_price"] * lots
+                                        except:
+                                            pass
 
-                                        long_win, long_loss, short_win, short_loss = 0, 0, 0, 0
-                                        for item in longs:
-                                            if item["type_of_exit"] == "Win":
-                                                long_win += 1
-                                            if item["type_of_exit"] == "Win":
-                                                long_loss += 1
+                                    short_brokerage = short_turnover / 1000000000 * 838
+                                    net_short_pnl = shorts_pnl - short_brokerage
+                                    # print("Net PNL long is: " + str(net_long_pnl) + " and Net PNL short is: " + str(net_short_pnl))
 
-                                        for item in shorts:
-                                            if item["type_of_exit"] == "Win":
-                                                short_win += 1
-                                            if item["type_of_exit"] == "Win":
-                                                short_loss += 1
+                                    long_win, long_loss, short_win, short_loss = 0, 0, 0, 0
+                                    for item in longs:
+                                        if item["type_of_exit"] == "Win":
+                                            long_win += 1
+                                        if item["type_of_exit"] == "Win":
+                                            long_loss += 1
 
-                                        profitability_longs = long_win / num_longs
-                                        profitability_shorts = short_win / num_shorts
-                                        profitability_total = (long_win + short_win) / (num_longs + num_shorts)
+                                    for item in shorts:
+                                        if item["type_of_exit"] == "Win":
+                                            short_win += 1
+                                        if item["type_of_exit"] == "Win":
+                                            short_loss += 1
 
-                                        pnl = []
+                                    profitability_longs = long_win / num_longs
+                                    profitability_shorts = short_win / num_shorts
+                                    profitability_total = (long_win + short_win) / (num_longs + num_shorts)
 
-                                        for item in longs:
-                                            pnl.append(item["pnl"])
-                                        for item in shorts:
-                                            pnl.append(item["pnl"])
+                                    pnl = []
 
-                                        total_time_for_every_trade = []
-                                        for item in longs:
+                                    for item in longs:
+                                        try:
+                                            if pnl > 0 or pnl <= 0:
+                                                pnl.append(item["pnl"])
+                                        except:
+                                            pass
+                                    for item in shorts:
+                                        try:
+                                            if pnl > 0 or pnl <= 0:
+                                                pnl.append(item["pnl"])
+                                        except:
+                                            pass
+
+                                    total_time_for_every_trade = []
+                                    for item in longs:
+                                        try:
                                             total_time_for_every_trade.append(
                                                 item["timestamp_of_exit"] - item["timestamp_of_entry"])
-                                        for item in shorts:
+                                        except:
+                                            pass
+                                    for item in shorts:
+                                        try:
                                             total_time_for_every_trade.append(
                                                 item["timestamp_of_exit"] - item["timestamp_of_entry"])
+                                        except:
+                                            pass
 
-                                        avg_time = sum(total_time_for_every_trade, datetime.timedelta(0)) / len(
-                                            total_time_for_every_trade)
+                                    avg_time = sum(total_time_for_every_trade, datetime.timedelta(0)) / len(
+                                        total_time_for_every_trade)
 
-                                        # Logic to return data as a result
-                                        if net_long_pnl != 0.0:
-                                            if net_short_pnl != 0.0:
-                                                results.append({"settings": settings,
-                                                                "netlongpnl": net_long_pnl,
-                                                                "netshortpnl": net_short_pnl,
-                                                                "netpnl": net_short_pnl + net_long_pnl,
-                                                                "profitability_longs": profitability_longs,
-                                                                "profitability_shorts": profitability_shorts,
-                                                                "profitability_total": profitability_total,
-                                                                "number_of_trades": num_shorts + num_longs,
-                                                                "num_longs": num_longs,
-                                                                "num_shorts": num_shorts,
-                                                                "max_profit": max(pnl),
-                                                                "max_DD": min(pnl),
-                                                                "average_pnl": mean(pnl),
-                                                                "apnl/max_DD": mean(pnl) / abs(min(pnl)),
-                                                                "average_trade_time": avg_time
-                                                                })
-                                        i += 1
-                                        print(str(i) + " : " + str(profitability_total) + " : " + str(
-                                            net_short_pnl + net_long_pnl) + " : " + str(
-                                            num_longs + num_shorts) + " : " + settings)
-                                        # List of all trades
-                                        trades = longs + shorts
-                                        write_trades(settings, trades)
-                                    except:
-                                        pass
+
+                                    # Logic to return data as a result
+                                    if net_long_pnl != 0.0:
+                                        if net_short_pnl != 0.0:
+                                            results.append({"settings": settings,
+                                                            "netlongpnl": net_long_pnl,
+                                                            "netshortpnl": net_short_pnl,
+                                                            "netpnl": net_short_pnl + net_long_pnl,
+                                                            "profitability_longs": profitability_longs,
+                                                            "profitability_shorts": profitability_shorts,
+                                                            "profitability_total": profitability_total,
+                                                            "number_of_trades": num_shorts + num_longs,
+                                                            "num_longs": num_longs,
+                                                            "num_shorts": num_shorts,
+                                                            # "max_profit": max(pnl),
+                                                            # "max_DD": min(pnl),
+                                                            # "average_pnl": mean(pnl),
+                                                            # "apnl/max_DD": mean(pnl) / abs(min(pnl)),
+                                                            "average_trade_time": avg_time
+                                                            })
+                                    i += 1
+                                    print(str(i) + " : " + str(profitability_total) + " : " + str(
+                                        net_short_pnl + net_long_pnl) + " : " + str(
+                                        num_longs + num_shorts) + " : " + settings)
+                                    # List of all trades
+                                    trades = longs + shorts
+                                    write_trades(settings, trades)
+
     return results
 
 
