@@ -2,6 +2,8 @@ import pandas as pd
 import talib
 import matplotlib.pyplot as plt
 import matplotlib.dates as md
+from os import listdir
+from os.path import isfile, join
 
 def resample(filename, timeframe='15Min'):
     # Get top bid ask
@@ -39,6 +41,33 @@ def resample(filename, timeframe='15Min'):
 
     # Return bid, ask
     return bid, ask
+
+def write_result(results,file):
+    with open("{}.csv".format(file), "w+", newline="") as outfile:
+        print(results)
+        for header in list(results[0].keys()):
+            if header != list(results[0].keys())[-1]:
+                outfile.write(str(header) + ",")
+            else:
+                outfile.write(str(header) + "\n")
+        for result in results:
+            for value in list(result.values()):
+                if value != list(result.values())[-1]:
+                    outfile.write(str(value) + ",")
+                else:
+                    outfile.write(str(value) + "\n")
+    return "Done"
+
+def get_list_of_files(relative_path,extension):
+    onlyfiles = [f for f in listdir(relative_path) if isfile(join(relative_path, f))]
+
+    file_list = []
+
+    for filename in onlyfiles:
+        if extension in filename:
+            file_list.append(filename)
+
+    return file_list
 
 if __name__ == "__main__":
 
