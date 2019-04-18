@@ -14,14 +14,15 @@ if __name__ == "__main__":
         rsi_windows = range(7, 36, 7)  # 5
         rsi_oversold_bounds = range(15, 50, 5)  # 7
         rsi_overbought_bounds = range(50, 85, 5)  # 7
-        ema_values = range(7, 70, 7)  # 10
-        targets = range(800, 20000, 200)  # 25
+        ema_values = range(7, 43, 7)  # 6
+        targets = range(800, 1700, 200)  # 8
         stops = [800, 1000]  # 2
-        overlaps = [False,True]  # 0
+        overlaps = [True]  # 0
+        lots=1
 
         results = do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bounds, ema_values, targets,
                               stops,
-                              overlaps)
+                              overlaps,lots)
 
         status = write_result(results, file)
 

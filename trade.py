@@ -38,7 +38,7 @@ def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=30
     stop_price = entry_price - stop  # 3 rupees down for crude
     timestamp_of_exit = None
     type_of_exit = None
-    pnl = None
+    pnl = 0
 
     # type of exit and PNL calculation
     for item in dataframe.iterrows():
@@ -46,22 +46,22 @@ def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=30
             current_price = item[1]['open']
             if current_price >= target_price:  # If target is hit
                 type_of_exit = "Win"
-                pnl = (current_price - entry_price) * lots - 7800
+                pnl = ((current_price - entry_price) * lots * 100) - 7800
                 timestamp_of_exit = item[0]
                 break
             elif current_price <= stop_price:  # If stop is hit
                 type_of_exit = "Loss"
-                pnl = (current_price - entry_price) * lots - 7800
+                pnl = ((current_price - entry_price) * lots * 100) - 7800
                 timestamp_of_exit = item[0]
                 break
-
+    # print(pnl)
     return {"timestamp_of_entry": timestamp_of_entry,
             "timestamp_of_exit": timestamp_of_exit,
             "entry_price": entry_price,
             "target_price": target_price,
             "stop_price": stop_price,
             "type_of_exit": type_of_exit,
-            "pnl": 0.00}
+            "pnl": pnl}
 
 
 def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=300):
@@ -93,7 +93,7 @@ def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=
     stop_price = entry_price + stop  # 3 rupees up for crude
     timestamp_of_exit = None
     type_of_exit = None
-    pnl = None
+    pnl = 0
 
     # type of exit and PNL calculation
     for item in dataframe.iterrows():
@@ -101,15 +101,16 @@ def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=
             current_price = item[1]['open']
             if current_price <= target_price:  # If target is hit
                 type_of_exit = "Win"
-                pnl = (current_price - entry_price) * lots * (-1)
+                pnl = (current_price - entry_price) * lots * (-1) * 100 - 7800
                 timestamp_of_exit = item[0]
                 break
             elif current_price >= stop_price:  # If stop is hit
                 type_of_exit = "Loss"
-                pnl = (current_price - entry_price) * lots * (-1)
+                pnl = (current_price - entry_price) * lots * (-1) * 100 - 7800
                 timestamp_of_exit = item[0]
                 break
 
+    # print(pnl)
     return {"timestamp_of_entry": timestamp_of_entry,
             "timestamp_of_exit": timestamp_of_exit,
             "entry_price": entry_price,
@@ -120,7 +121,7 @@ def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=
 
 
 def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bounds, ema_values, targets, stops,
-                overlaps):
+                overlaps, lots):
     i = 0
     results = []
     for overlap in overlaps:
@@ -128,10 +129,14 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
             for rsi_upper in rsi_overbought_bounds:
                 for rsi_lower in rsi_oversold_bounds:
                     for slow_ema in ema_values:
+                        # if slow_ema > fast_ema:
+                        #     break
                         for fast_ema in ema_values:
                             if slow_ema > fast_ema:
                                 break
                             for target in targets:
+                                # if stop > target:
+                                #     break
                                 for stop in stops:
                                     if stop > target:
                                         break
@@ -142,7 +147,7 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                     ask['RSI'] = talib.RSI(ask['close'], timeperiod=rsi_window)
                                     ask['MA_fast'] = talib.EMA(ask['close'], timeperiod=fast_ema)
                                     ask['MA_slow'] = talib.EMA(ask['close'], timeperiod=slow_ema)
-                                    lots = 10
+                                    # lots = 10
                                     longs = []
                                     shorts = []
 
@@ -226,20 +231,20 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                     profitability_shorts = short_win / num_shorts
                                     profitability_total = (long_win + short_win) / (num_longs + num_shorts)
 
-                                    pnl = []
+                                    # pnl = []
 
-                                    for item in longs:
-                                        try:
-                                            if pnl > 0 or pnl <= 0:
-                                                pnl.append(item["pnl"])
-                                        except:
-                                            pass
-                                    for item in shorts:
-                                        try:
-                                            if pnl > 0 or pnl <= 0:
-                                                pnl.append(item["pnl"])
-                                        except:
-                                            pass
+                                    # for item in longs:
+                                    #     try:
+                                    #         if pnl > 0 or pnl <= 0:
+                                    #             pnl.append(item["pnl"])
+                                    #     except:
+                                    #         pass
+                                    # for item in shorts:
+                                    #     try:
+                                    #         if pnl > 0 or pnl <= 0:
+                                    #             pnl.append(item["pnl"])
+                                    #     except:
+                                    #         pass
 
                                     total_time_for_every_trade = []
                                     for item in longs:
@@ -257,7 +262,6 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
 
                                     avg_time = sum(total_time_for_every_trade, datetime.timedelta(0)) / len(
                                         total_time_for_every_trade)
-
 
                                     # Logic to return data as a result
                                     if net_long_pnl != 0.0:
@@ -283,9 +287,8 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                         net_short_pnl + net_long_pnl) + " : " + str(
                                         num_longs + num_shorts) + " : " + settings)
                                     # List of all trades
-                                    trades = longs + shorts
+                                    trades = longs+shorts
                                     write_trades(settings, trades)
-
     return results
 
 
