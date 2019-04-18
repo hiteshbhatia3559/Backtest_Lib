@@ -4,11 +4,14 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as md
 
 def resample(filename, timeframe='15Min'):
+    # Get top bid ask
     col_names = ["Timestamp", "Remove", "Remove", "Remove", "Remove", "B2", "B1", "B", "A", "A1", "A2"]
     filler = ["Remove"] * (36 - len(col_names))
-    col_names += filler
-    df = pd.read_csv(filename, header=None, names=col_names)
+    for item in filler:
+        col_names.append(item)
+    df = pd.read_csv(filename, header=None, names=col_names)[50:-50]
 
+    # Cleaning
     df.drop(["Remove"], axis=1, inplace=True)
     for x in range(1, 51):
         try:
@@ -16,30 +19,31 @@ def resample(filename, timeframe='15Min'):
         except:
             pass
 
-    df['Timestamp'] = pd.to_datetime(df['Timestamp']*1e9).values + pd.to_timedelta(5.5, unit='h')
-    #print(df['Timestamp'])
-    df.set_index(["Timestamp"], inplace=True)
+    # Convert epoch to Indian datetime
+    df['Timestamp'] = pd.to_datetime(df['Timestamp'] * 1e9).values + pd.to_timedelta(5.5, unit='h')
+
+    # Set index as Timestamp
+    df.set_index(df['Timestamp'], inplace=True)
+
+    # Drop duplicate Timestamp column
+    df.drop(['Timestamp'], axis=1, inplace=True)
+
+    # Convert Bid-Ask to int
     df[["B", "A"]] = df[["B", "A"]].astype(int)
-    df = df.resample(timeframe).ohlc()
 
-    return df["B"], df["A"] # Returns bid and ask OHLC
+    # Get bid ohlc
+    bid = df["B"].resample(timeframe).ohlc()
 
+    # Get ask ohlc
+    ask = df["A"].resample(timeframe).ohlc()
+
+    # Return bid, ask
+    return bid, ask
 
 if __name__ == "__main__":
 
-    x, y = resample('1 (1).log', '1Min')
-    x.to_csv('new.csv')
-    # x['RSI'] = talib.RSI(x['open'], timeperiod=36)
-    # x['MA14'] = talib.EMA(x['close'], timeperiod=36)
-    # x['MA28'] = talib.EMA(x['close'], timeperiod=72)
-    # f, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    # xfmt = md.DateFormatter('%Y-%m-%d %H:%M:%S')
-    # ax1.xaxis.set_major_formatter(xfmt)
-    #
-    # ax1.plot(x['close'])
-    # print(x['open'].std())
-    # print(x['open'].mean())
-    # print(x['open'].head())
-    #
-    # ax2.plot(x['RSI'])
-    # plt.show()
+    x, y = resample('1 (5).log', '1Min')
+    x = x/100
+
+    plt.plot(x)
+    plt.show()
