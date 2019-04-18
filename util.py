@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as md
 from os import listdir
 from os.path import isfile, join
+import os
+import csv
 
 def resample(filename, timeframe='15Min'):
     # Get top bid ask
@@ -44,19 +46,11 @@ def resample(filename, timeframe='15Min'):
 
 def write_result(results,file):
     with open("{}.csv".format(file), "w+", newline="") as outfile:
-        print(results)
-        for header in list(results[0].keys()):
-            if header != list(results[0].keys())[-1]:
-                outfile.write(str(header) + ",")
-            else:
-                outfile.write(str(header) + "\n")
-        for result in results:
-            for value in list(result.values()):
-                if value != list(result.values())[-1]:
-                    outfile.write(str(value) + ",")
-                else:
-                    outfile.write(str(value) + "\n")
-    return "Done"
+        keys = results[0].keys()
+        dict_writer = csv.DictWriter(outfile,keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(results)
+    return "Done for {}".format(file)
 
 def get_list_of_files(relative_path,extension):
     onlyfiles = [f for f in listdir(relative_path) if isfile(join(relative_path, f))]
@@ -68,6 +62,16 @@ def get_list_of_files(relative_path,extension):
             file_list.append(filename)
 
     return file_list
+
+def write_trades(settings,trades):
+    nocare = os.system("mkdir results")
+    keys = trades[0].keys()
+    with open('./results/{}.csv'.format(settings),'wb') as outfile:
+        dict_writer = csv.DictWriter(outfile,keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(trades)
+
+    print("Written file for {}".format(settings))
 
 if __name__ == "__main__":
 

@@ -1,1 +1,1 @@
-# MOVED TO MAIN
+print(5*7*7*10*25*2)
