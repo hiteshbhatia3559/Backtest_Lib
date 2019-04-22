@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     file_list = get_list_of_files('./', '.log')
 
-    file_list = ['1 (2).log']
+    # file_list = ['1 (2).log']
 
     for file in file_list:
         bid, ask = resample(file, '5Min')
@@ -25,6 +25,6 @@ if __name__ == "__main__":
 
         results = do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bounds, ema_values, targets,
                               stops,
-                              overlaps, lots, max_lots)
+                              overlaps, lots, max_lots,filename_parent=file)
 
         status = write_result(results, file)

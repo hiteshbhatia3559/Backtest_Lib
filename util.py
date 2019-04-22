@@ -50,7 +50,7 @@ def write_result(results,file):
         dict_writer = csv.DictWriter(outfile,keys)
         dict_writer.writeheader()
         dict_writer.writerows(results)
-    return "Done for {}".format(file)
+    print("Done for {}".format(file))
 
 def get_list_of_files(relative_path,extension):
     onlyfiles = [f for f in listdir(relative_path) if isfile(join(relative_path, f))]
@@ -63,10 +63,10 @@ def get_list_of_files(relative_path,extension):
 
     return file_list
 
-def write_trades(settings,trades):
-    # nocare = os.system("mkdir results")
+def write_trades(settings,trades,name):
+    nocare = os.system("mkdir {}".format(name))
     keys = trades[0].keys()
-    with open('./results/{}.csv'.format(settings),'w+',newline='') as outfile:
+    with open('./{}/{}.csv'.format(name,settings),'w+',newline='') as outfile:
         dict_writer = csv.DictWriter(outfile,keys)
         dict_writer.writeheader()
         dict_writer.writerows(trades)

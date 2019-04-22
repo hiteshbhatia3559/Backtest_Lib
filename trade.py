@@ -164,7 +164,7 @@ def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=
 
 
 def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bounds, ema_values, targets, stops,
-                overlaps, lots, max_lots):
+                overlaps, lots, max_lots,filename_parent):
     i = 0
     results = []
     for overlap in overlaps:
@@ -340,7 +340,7 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                         num_longs + num_shorts) + " : " + settings)
                                     # List of all trades
                                     trades = longs + shorts
-                                    write_trades(settings, trades)
+                                    write_trades(settings, trades, filename_parent)
     return results
 
 
