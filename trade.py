@@ -151,7 +151,7 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                     longs = []
                                     shorts = []
 
-                                    # STRATEGY
+                                    #\ STRATEGY
                                     # Return type is a dict with
                                     # if valid : {timestamp of entry, timestamp of exit, entry price, target price, stop price, type of exit, pnl}
                                     # if invalid : {timestamp_of_entry, type_of_exit}
@@ -183,7 +183,7 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                         break
                                     if num_longs == 0:
                                         break
-                                    # STRATEGY
+                                    #/ STRATEGY
 
                                     # PNL Calc
                                     # PNL for longs
@@ -231,21 +231,6 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                     profitability_shorts = short_win / num_shorts
                                     profitability_total = (long_win + short_win) / (num_longs + num_shorts)
 
-                                    # pnl = []
-
-                                    # for item in longs:
-                                    #     try:
-                                    #         if pnl > 0 or pnl <= 0:
-                                    #             pnl.append(item["pnl"])
-                                    #     except:
-                                    #         pass
-                                    # for item in shorts:
-                                    #     try:
-                                    #         if pnl > 0 or pnl <= 0:
-                                    #             pnl.append(item["pnl"])
-                                    #     except:
-                                    #         pass
-
                                     total_time_for_every_trade = []
                                     for item in longs:
                                         try:
@@ -263,6 +248,20 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                     avg_time = sum(total_time_for_every_trade, datetime.timedelta(0)) / len(
                                         total_time_for_every_trade)
 
+                                    net_pnl_list = []
+
+                                    for item in longs:
+                                        if "pnl" in list(item.keys()):
+                                            net_pnl_list.append(item["pnl"])
+                                    for item in shorts:
+                                        if "pnl" in list(item.keys()):
+                                            net_pnl_list.append(item["pnl"])
+
+                                    max_pnl = max(net_pnl_list)
+                                    max_dd = min(net_pnl_list)
+                                    avg_pnl = mean(net_pnl_list)
+
+
                                     # Logic to return data as a result
                                     if net_long_pnl != 0.0:
                                         if net_short_pnl != 0.0:
@@ -276,10 +275,10 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                                             "number_of_trades": num_shorts + num_longs,
                                                             "num_longs": num_longs,
                                                             "num_shorts": num_shorts,
-                                                            # "max_profit": max(pnl),
-                                                            # "max_DD": min(pnl),
-                                                            # "average_pnl": mean(pnl),
-                                                            # "apnl/max_DD": mean(pnl) / abs(min(pnl)),
+                                                            "max_profit": max_pnl,
+                                                            "max_DD": max_dd,
+                                                            "average_pnl": avg_pnl,
+                                                            "apnl/max_DD": avg_pnl/abs(max_dd),
                                                             "average_trade_time": avg_time
                                                             })
                                     i += 1
