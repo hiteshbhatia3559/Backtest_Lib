@@ -9,7 +9,7 @@ import numpy as np
 import datetime
 
 
-def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=300):
+def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=300, max_lots=10):
     # longs is a set of all longs
     # dataframe is a pandas dataframe of asks, used to market exit positions
     # row has our timestamp, entry price at row[0] and row[1] respectively
@@ -18,8 +18,10 @@ def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=30
 
     # check if there is an existing long trade (trade overlap)
     timestamp_of_entry = row[0]
+    current_lots = 0
 
     if overlap is not True:
+        # CASE OF NO PYRAMIDING
         if len(longs) != 0:
             for trade in longs:
                 if "timestamp_of_exit" in list(trade.keys()) and trade["timestamp_of_exit"] is not None:
@@ -30,7 +32,26 @@ def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=30
                                 "target_price": None,
                                 "stop_price": None,
                                 "type_of_exit": "Overlap",
-                                "pnl": None}
+                                "pnl": None,
+                                "open_lots": current_lots * lots}
+    else:
+        # CASE OF PYRAMIDING
+        if len(longs) != 0:
+            for trade in longs:
+                if "timestamp_of_exit" in list(trade.keys()) and trade["timestamp_of_exit"] is not None:
+                    if (timestamp_of_entry < trade["timestamp_of_exit"]) and \
+                            (timestamp_of_entry > trade["timestamp_of_entry"]):
+                        current_lots += 1
+
+    if current_lots * lots >= max_lots:
+        return {"timestamp_of_entry": timestamp_of_entry,
+                "timestamp_of_exit": None,
+                "entry_price": None,
+                "target_price": None,
+                "stop_price": None,
+                "type_of_exit": "Lot limit",
+                "pnl": None,
+                "open_lots": current_lots * lots}
 
     # This part of the code will be unreachable if there is a trade overlap
     entry_price = row[1]['close']
@@ -46,12 +67,12 @@ def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=30
             current_price = item[1]['open']
             if current_price >= target_price:  # If target is hit
                 type_of_exit = "Win"
-                pnl = ((current_price - entry_price) * lots * 100) - 7800
+                pnl = ((current_price - entry_price) * lots * 100)
                 timestamp_of_exit = item[0]
                 break
             elif current_price <= stop_price:  # If stop is hit
                 type_of_exit = "Loss"
-                pnl = ((current_price - entry_price) * lots * 100) - 7800
+                pnl = ((current_price - entry_price) * lots * 100)
                 timestamp_of_exit = item[0]
                 break
     # print(pnl)
@@ -61,10 +82,11 @@ def make_long(longs, dataframe, row, lots=10, overlap=False, target=900, stop=30
             "target_price": target_price,
             "stop_price": stop_price,
             "type_of_exit": type_of_exit,
-            "pnl": pnl}
+            "pnl": pnl,
+            "open_lots": current_lots * lots}
 
 
-def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=300):
+def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=300, max_lots=10):
     # shorts is a set of all shorts
     # dataframe is a pandas dataframe of bids, used to market exit positions
     # row has our timestamp, entry price at row[0] and row[1] respectively
@@ -73,7 +95,7 @@ def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=
 
     # check if there is an existing long trade (trade overlap)
     timestamp_of_entry = row[0]
-
+    current_lots = 0
     if overlap is not True:
         if len(shorts) != 0:
             for trade in shorts:
@@ -85,7 +107,27 @@ def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=
                                 "target_price": None,
                                 "stop_price": None,
                                 "type_of_exit": "Overlap",
-                                "pnl": 0.00}
+                                "pnl": 0.00,
+                                "open_lots": current_lots * lots
+                                }
+    else:
+        # CASE OF PYRAMIDING
+        if len(shorts) != 0:
+            for trade in shorts:
+                if "timestamp_of_exit" in list(trade.keys()) and trade["timestamp_of_exit"] is not None:
+                    if (timestamp_of_entry < trade["timestamp_of_exit"]) and \
+                            (timestamp_of_entry > trade["timestamp_of_entry"]):
+                        current_lots += 1
+
+    if current_lots * lots >= max_lots:
+        return {"timestamp_of_entry": timestamp_of_entry,
+                "timestamp_of_exit": None,
+                "entry_price": None,
+                "target_price": None,
+                "stop_price": None,
+                "type_of_exit": "Lot limit",
+                "pnl": None,
+                "open_lots": -1 * current_lots * lots}
 
     # This part of the code will be unreachable if there is a trade overlap
     entry_price = row[1]['close']
@@ -101,12 +143,12 @@ def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=
             current_price = item[1]['open']
             if current_price <= target_price:  # If target is hit
                 type_of_exit = "Win"
-                pnl = (current_price - entry_price) * lots * (-1) * 100 - 7800
+                pnl = (current_price - entry_price) * lots * (-1) * 100
                 timestamp_of_exit = item[0]
                 break
             elif current_price >= stop_price:  # If stop is hit
                 type_of_exit = "Loss"
-                pnl = (current_price - entry_price) * lots * (-1) * 100 - 7800
+                pnl = (current_price - entry_price) * lots * (-1) * 100
                 timestamp_of_exit = item[0]
                 break
 
@@ -117,11 +159,12 @@ def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=
             "target_price": target_price,
             "stop_price": stop_price,
             "type_of_exit": type_of_exit,
-            "pnl": pnl}
+            "pnl": pnl,
+            "open_lots": -1 * current_lots * lots}
 
 
 def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bounds, ema_values, targets, stops,
-                overlaps, lots):
+                overlaps, lots, max_lots):
     i = 0
     results = []
     for overlap in overlaps:
@@ -132,7 +175,7 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                         # if slow_ema > fast_ema:
                         #     break
                         for fast_ema in ema_values:
-                            if slow_ema > fast_ema:
+                            if slow_ema < fast_ema:
                                 break
                             for target in targets:
                                 # if stop > target:
@@ -147,11 +190,11 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                     ask['RSI'] = talib.RSI(ask['close'], timeperiod=rsi_window)
                                     ask['MA_fast'] = talib.EMA(ask['close'], timeperiod=fast_ema)
                                     ask['MA_slow'] = talib.EMA(ask['close'], timeperiod=slow_ema)
-                                    # lots = 10
+
                                     longs = []
                                     shorts = []
 
-                                    #\ STRATEGY
+                                    # \ STRATEGY
                                     # Return type is a dict with
                                     # if valid : {timestamp of entry, timestamp of exit, entry price, target price, stop price, type of exit, pnl}
                                     # if invalid : {timestamp_of_entry, type_of_exit}
@@ -162,13 +205,13 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                             if row[1]['RSI'] < rsi_lower:  # Oversold condition
                                                 longs.append(
                                                     make_long(longs, bid, row, lots=lots, target=target, stop=stop,
-                                                              overlap=overlap))
+                                                              overlap=overlap, max_lots=max_lots))
                                         if row[1]['MA_fast'] < row[1]['MA_slow']:
                                             if row[1]['RSI'] > rsi_upper:  # Overbought condition
                                                 shorts.append(
                                                     make_short(shorts, ask, row, lots=lots, target=target,
                                                                stop=stop,
-                                                               overlap=overlap))
+                                                               overlap=overlap, max_lots=max_lots))
                                     if len(longs) == 0 or len(shorts) == 0:
                                         break
                                     num_longs, num_shorts = 0, 0
@@ -183,7 +226,7 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                         break
                                     if num_longs == 0:
                                         break
-                                    #/ STRATEGY
+                                    # / STRATEGY
 
                                     # PNL Calc
                                     # PNL for longs
@@ -252,15 +295,23 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
 
                                     for item in longs:
                                         if "pnl" in list(item.keys()):
-                                            net_pnl_list.append(item["pnl"])
+                                            if item["pnl"] is not None:
+                                                net_pnl_list.append(item["pnl"])
                                     for item in shorts:
                                         if "pnl" in list(item.keys()):
-                                            net_pnl_list.append(item["pnl"])
+                                            if item["pnl"] is not None:
+                                                net_pnl_list.append(item["pnl"])
 
                                     max_pnl = max(net_pnl_list)
                                     max_dd = min(net_pnl_list)
                                     avg_pnl = mean(net_pnl_list)
 
+                                    longs_concurrent = []
+                                    for item in longs:
+                                        longs_concurrent.append(item["open_lots"])
+                                    shorts_concurrent = []
+                                    for item in shorts:
+                                        shorts_concurrent.append(item["open_lots"])
 
                                     # Logic to return data as a result
                                     if net_long_pnl != 0.0:
@@ -278,15 +329,17 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                                             "max_profit": max_pnl,
                                                             "max_DD": max_dd,
                                                             "average_pnl": avg_pnl,
-                                                            "apnl/max_DD": avg_pnl/abs(max_dd),
-                                                            "average_trade_time": avg_time
+                                                            "apnl/max_DD": avg_pnl / abs(max_dd),
+                                                            "average_trade_time": avg_time,
+                                                            "long_max_concurrent": max(longs_concurrent),
+                                                            "short_max_concurrent": min(shorts_concurrent),
                                                             })
                                     i += 1
                                     print(str(i) + " : " + str(profitability_total) + " : " + str(
                                         net_short_pnl + net_long_pnl) + " : " + str(
                                         num_longs + num_shorts) + " : " + settings)
                                     # List of all trades
-                                    trades = longs+shorts
+                                    trades = longs + shorts
                                     write_trades(settings, trades)
     return results
 

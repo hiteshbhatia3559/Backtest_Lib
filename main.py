@@ -18,11 +18,13 @@ if __name__ == "__main__":
         targets = range(800, 1700, 200)  # 8
         stops = [800, 1000]  # 2
         overlaps = [True]  # 0
-        lots=1
+        # lots = int(input("Enter number of lots per signal\n"))
+        # max_lots = int(input("Enter number of maximum lots open at any given time\n"))
+
+        lots,max_lots = 1,10
 
         results = do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bounds, ema_values, targets,
                               stops,
-                              overlaps,lots)
+                              overlaps, lots, max_lots)
 
         status = write_result(results, file)
-
