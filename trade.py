@@ -257,6 +257,10 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                     net_short_pnl = shorts_pnl - short_brokerage
                                     # print("Net PNL long is: " + str(net_long_pnl) + " and Net PNL short is: " + str(net_short_pnl))
 
+                                    if net_long_pnl+net_short_pnl < 0:
+                                        # print("Bad PNL in {}, skipped".format(settings))
+                                        break
+
                                     long_win, long_loss, short_win, short_loss = 0, 0, 0, 0
                                     for item in longs:
                                         if item["type_of_exit"] == "Win":
