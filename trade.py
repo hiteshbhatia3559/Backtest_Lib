@@ -1,7 +1,7 @@
 import pandas as pd
 import talib
 import matplotlib.pyplot as plt
-from util import resample, write_trades
+from util import resample, write_trades, write_result
 import csv
 import os
 from statistics import mean
@@ -338,15 +338,33 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                                             "long_max_concurrent": max(longs_concurrent),
                                                             "short_max_concurrent": min(shorts_concurrent),
                                                             })
-                                    i += 1
-                                    print(str(i) + " : " + str(profitability_total) + " : " + str(
-                                        net_short_pnl + net_long_pnl) + " : " + str(
-                                        num_longs + num_shorts) + " : " + settings)
+                                    # i += 1
+                                    # print(str(i) + " : " + str(profitability_total) + " : " + str(
+                                    #     net_short_pnl + net_long_pnl) + " : " + str(
+                                    #     num_longs + num_shorts) + " : " + settings)
                                     # List of all trades
                                     trades = longs + shorts
                                     write_trades(settings, trades, filename_parent)
     return results
 
 
-def get_trades(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bounds, ema_values, targets, stops):
-    pass
+def get_default_backtest(file):
+    bid, ask = resample(file, '5Min')
+    rsi_windows = range(7, 36, 7)  # 5
+    rsi_oversold_bounds = range(15, 50, 5)  # 7
+    rsi_overbought_bounds = range(50, 85, 5)  # 7
+    ema_values = range(7, 43, 7)  # 6
+    targets = range(800, 1700, 200)  # 8
+    stops = [800, 1000]  # 2
+    overlaps = [True]  # 0
+    # lots = int(input("Enter number of lots per signal\n"))
+    # max_lots = int(input("Enter number of maximum lots open at any given time\n"))
+
+    lots, max_lots = 1, 10
+
+    results = do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bounds, ema_values, targets,
+                          stops,
+                          overlaps, lots, max_lots, filename_parent=file)
+
+    status = write_result(results, file)
+    return status
