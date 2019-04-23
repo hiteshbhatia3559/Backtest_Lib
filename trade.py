@@ -165,6 +165,8 @@ def make_short(shorts, dataframe, row, lots=10, overlap=False, target=900, stop=
 
 def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bounds, ema_values, targets, stops,
                 overlaps, lots, max_lots,filename_parent):
+    print("Doing {}".format(filename_parent))
+
     i = 0
     results = []
     for overlap in overlaps:
@@ -257,7 +259,7 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                     net_short_pnl = shorts_pnl - short_brokerage
                                     # print("Net PNL long is: " + str(net_long_pnl) + " and Net PNL short is: " + str(net_short_pnl))
 
-                                    if net_long_pnl+net_short_pnl < 0:
+                                    if net_long_pnl+net_short_pnl < -6000:
                                         # print("Bad PNL in {}, skipped".format(settings))
                                         break
 
@@ -265,13 +267,13 @@ def do_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bound
                                     for item in longs:
                                         if item["type_of_exit"] == "Win":
                                             long_win += 1
-                                        if item["type_of_exit"] == "Win":
+                                        if item["type_of_exit"] == "Loss":
                                             long_loss += 1
 
                                     for item in shorts:
                                         if item["type_of_exit"] == "Win":
                                             short_win += 1
-                                        if item["type_of_exit"] == "Win":
+                                        if item["type_of_exit"] == "Loss":
                                             short_loss += 1
 
                                     profitability_longs = long_win / num_longs

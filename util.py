@@ -67,7 +67,6 @@ def write_trades(settings,trades,name):
     filename = name.split('.log')
     if not os.path.exists("{}".format(filename[0])):
         os.makedirs("{}".format(filename[0]))
-    print("Doing {}".format(filename[0]))
     keys = trades[0].keys()
     with open('./{}/{}.csv'.format(filename[0],settings),'w+',newline='') as outfile:
         dict_writer = csv.DictWriter(outfile,keys)
