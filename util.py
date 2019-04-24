@@ -58,7 +58,8 @@ def get_list_of_files(relative_path,extension):
     file_list = []
 
     for filename in onlyfiles:
-        if extension in filename:
+        # print(filename.split('.'))
+        if extension == filename.split('.')[-1]:
             file_list.append(filename)
 
     return file_list
