@@ -1,6 +1,35 @@
-import datetime
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib import style
+import matplotlib
+import random
+matplotlib.use("TkAgg")
+import numpy as np
 
-base = datetime.datetime(2019,4,22,0,0,0)
-date_list = [base - datetime.timedelta(minutes=x) for x in range(0, 10)]
+style.use('fivethirtyeight')
+fig = plt.figure()
+ax1 = fig.add_subplot(1, 1, 1)
 
-print(date_list)
+
+
+
+def animate(i):
+    print("call")
+    graph_data = open('new1.txt', 'r+').read()
+    lines = graph_data.split('\n')
+    xs = []
+    ys = []
+    print("2 call")
+    for line in lines:
+        if len(line) > 1:
+            x, y = line.split(',')
+            xs.append(x)
+            ys.append(y)
+    ax1.clear()
+    ax1.plot(xs[-100:], ys[-100:])
+    print("3 call")
+
+ani = animation.FuncAnimation(fig, animate, interval=1000)
+
+plt.show()
+

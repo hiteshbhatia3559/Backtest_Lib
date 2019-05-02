@@ -456,7 +456,7 @@ def ohlc_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bou
                                     for item in longs:
                                         try:
                                             longs_pnl += item["pnl"]
-                                            long_turnover += item["entry_price"] * lots
+                                            long_turnover += item["entry_price"]
                                         except:
                                             pass
                                     long_brokerage = long_turnover / 1000000000 * 838
@@ -469,7 +469,7 @@ def ohlc_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bou
                                     for item in shorts:
                                         try:
                                             shorts_pnl += item['pnl']
-                                            short_turnover += item["entry_price"] * lots
+                                            short_turnover += item["entry_price"]
                                         except:
                                             pass
 
@@ -505,23 +505,25 @@ def ohlc_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bou
 
                                     total_time_for_every_trade = []
                                     for item in longs:
-                                        try:
-                                            total_time_for_every_trade.append(
-                                                item["timestamp_of_exit"] - item["timestamp_of_entry"])
-                                        except:
-                                            pass
+                                        if item["timestamp_of_exit"] is not None and item["timestamp_of_entry"] is not None:
+                                            duration = pd.to_datetime(item["timestamp_of_exit"]) - pd.to_datetime(item["timestamp_of_entry"])
+                                            print(duration)
+                                            total_time_for_every_trade.append(duration)
+
                                     for item in shorts:
-                                        try:
-                                            total_time_for_every_trade.append(
-                                                item["timestamp_of_exit"] - item["timestamp_of_entry"])
-                                        except:
-                                            pass
+                                        if item["timestamp_of_exit"] is not None and item[
+                                            "timestamp_of_entry"] is not None:
+                                            duration = pd.to_datetime(item["timestamp_of_exit"]) - pd.to_datetime(
+                                                item["timestamp_of_entry"])
+                                            print(duration)
+                                            total_time_for_every_trade.append(duration)
+
                                     print("Bridge 8")
 
-                                    # print(total_time_for_every_trade)
+                                    print(total_time_for_every_trade)
 
-                                    # avg_time = sum(total_time_for_every_trade, datetime.timedelta(0)) / len(
-                                    #     total_time_for_every_trade)
+                                    avg_time = sum(total_time_for_every_trade, datetime.timedelta(0)) / len(
+                                        total_time_for_every_trade)
 
                                     net_pnl_list = []
 
@@ -564,7 +566,7 @@ def ohlc_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bou
                                                             "max_DD": max_dd,
                                                             "average_pnl": avg_pnl,
                                                             "apnl/max_DD": avg_pnl / abs(max_dd),
-                                                            # "average_trade_time": avg_time,
+                                                            "average_trade_time": avg_time,
                                                             "long_max_concurrent": max(longs_concurrent),
                                                             "short_max_concurrent": min(shorts_concurrent),
                                                             })
@@ -576,3 +578,4 @@ def ohlc_backtest(bid, ask, rsi_windows, rsi_oversold_bounds, rsi_overbought_bou
                                     trades = longs + shorts
                                     write_trades(settings, trades, filename_parent)
     return results
+
